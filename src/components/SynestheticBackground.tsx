@@ -101,20 +101,6 @@ export const SynestheticBackground: React.FC<SynestheticBackgroundProps> = ({
     setColors(selectedColors);
   }, [currentTrack]);
 
-  // Helper function to convert color to RGBA format
-  const colorToRGBA = (color: string, alpha: number) => {
-    if (color.startsWith('hsl(')) {
-      // Convert HSL to HSLA
-      return color.replace('hsl(', 'hsla(').replace(')', `, ${alpha})`);
-    } else if (color.startsWith('#')) {
-      // For hex colors, append alpha as hex
-      const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, '0');
-      return color + alphaHex;
-    }
-    // Fallback: assume it's already in a valid format
-    return color + Math.round(alpha * 255).toString(16).padStart(2, '0');
-  };
-
   // Audio-reactive visualization
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -155,7 +141,7 @@ export const SynestheticBackground: React.FC<SynestheticBackgroundProps> = ({
     };
 
     const animate = () => {
-      ctx.fillStyle = colorToRGBA(colors.accent, 0.08);
+      ctx.fillStyle = `${colors.accent}15`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       time += 0.016;
@@ -222,8 +208,8 @@ export const SynestheticBackground: React.FC<SynestheticBackgroundProps> = ({
           const radius = 100 + i * 50 + Math.sin(time + i) * 20;
           const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
           
-          gradient.addColorStop(0, colorToRGBA(colors.primary, 0.12));
-          gradient.addColorStop(0.5, colorToRGBA(colors.secondary, 0.06));
+          gradient.addColorStop(0, colors.primary + '20');
+          gradient.addColorStop(0.5, colors.secondary + '10');
           gradient.addColorStop(1, 'transparent');
           
           ctx.fillStyle = gradient;

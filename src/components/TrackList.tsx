@@ -34,14 +34,12 @@ export const TrackList: React.FC<TrackListProps> = ({
 
   const handleTrackClick = (track: YouTubeVideo, index: number) => {
     if (currentTrack?.id === track.id) {
-      // If clicking the same track, toggle play/pause
       if (isPlaying) {
         onPause();
       } else {
         onPlay();
       }
     } else {
-      // If clicking a different track, select and play it
       onTrackSelect(index);
     }
   };

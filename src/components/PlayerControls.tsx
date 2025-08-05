@@ -48,50 +48,6 @@ export default function PlayerControls({
 
   const { isPlaying, currentTime, duration, volume, currentTrack } = playerState;
 
-  // Dynamic colors based on current track
-  const getTrackColors = () => {
-    if (!currentTrack) return { primary: '#FF3CAC', secondary: '#784BA0' };
-    
-    const title = currentTrack.title.toLowerCase();
-    const channel = currentTrack.channelTitle.toLowerCase();
-    
-    // Color mapping for different genres/moods
-    if (title.includes('rock') || title.includes('metal')) {
-      return { primary: '#FF6B6B', secondary: '#4ECDC4' };
-    }
-    if (title.includes('electronic') || title.includes('edm')) {
-      return { primary: '#00D4FF', secondary: '#FF0080' };
-    }
-    if (title.includes('classical') || title.includes('piano')) {
-      return { primary: '#E6E6FA', secondary: '#DDA0DD' };
-    }
-    if (title.includes('bollywood') || title.includes('hindi')) {
-      return { primary: '#FF6347', secondary: '#FFD700' };
-    }
-    if (title.includes('sad') || title.includes('slow')) {
-      return { primary: '#4682B4', secondary: '#708090' };
-    }
-    if (title.includes('happy') || title.includes('party')) {
-      return { primary: '#FFD700', secondary: '#FF69B4' };
-    }
-    
-    // Generate unique colors from video ID
-    const hash = currentTrack.id.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    
-    const hue1 = Math.abs(hash) % 360;
-    const hue2 = (hue1 + 120) % 360;
-    
-    return {
-      primary: `hsl(${hue1}, 70%, 60%)`,
-      secondary: `hsl(${hue2}, 70%, 60%)`,
-    };
-  };
-
-  const trackColors = getTrackColors();
-
   const handlePlayPause = () => {
     if (isPlaying) {
       onPause();
@@ -243,16 +199,7 @@ export default function PlayerControls({
               
               <button
                 onClick={handlePlayPause}
-                className="p-3 text-white rounded-full transition-all duration-200 shadow-lg"
-                style={{
-                  background: `linear-gradient(45deg, ${trackColors.primary}, ${trackColors.secondary})`,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = `linear-gradient(45deg, ${trackColors.primary}CC, ${trackColors.secondary}CC)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = `linear-gradient(45deg, ${trackColors.primary}, ${trackColors.secondary})`;
-                }}
+                className="p-3 bg-gradient-to-r from-[#FF3CAC] to-[#784BA0] hover:from-[#FF3CAC]/80 hover:to-[#784BA0]/80 text-white rounded-full transition-all duration-200 shadow-lg"
                 title={isPlaying ? 'Pause' : 'Play'}
               >
                 {isPlaying ? (

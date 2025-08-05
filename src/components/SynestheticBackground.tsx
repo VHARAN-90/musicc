@@ -26,76 +26,34 @@ export const SynestheticBackground: React.FC<SynestheticBackgroundProps> = ({
 
     const title = currentTrack.title.toLowerCase();
     const channel = currentTrack.channelTitle.toLowerCase();
-    const videoId = currentTrack.id;
 
-    // Enhanced color mapping based on genre/mood and video ID
+    // Color mapping based on genre/mood
     const colorMappings = {
       // Energetic genres
-      rock: { primary: '#FF6B6B', secondary: '#4ECDC4', accent: '#1A1A2E' },
-      metal: { primary: '#FF0000', secondary: '#8B0000', accent: '#000000' },
-      electronic: { primary: '#00D4FF', secondary: '#FF0080', accent: '#0F0F23' },
-      edm: { primary: '#00FF88', secondary: '#FF00FF', accent: '#1A0033' },
-      pop: { primary: '#FF69B4', secondary: '#FFD700', accent: '#2D1B69' },
-      dance: { primary: '#FF1493', secondary: '#00CED1', accent: '#191970' },
+      rock: { primary: '#FF6B6B', secondary: '#4ECDC4', accent: '#45B7D1' },
+      electronic: { primary: '#00D4FF', secondary: '#FF0080', accent: '#8A2BE2' },
+      pop: { primary: '#FF69B4', secondary: '#FFD700', accent: '#FF1493' },
       
       // Calm genres
-      classical: { primary: '#E6E6FA', secondary: '#DDA0DD', accent: '#2F1B69' },
-      piano: { primary: '#F0F8FF', secondary: '#E0E6FF', accent: '#1E1E3F' },
-      jazz: { primary: '#CD853F', secondary: '#D2691E', accent: '#2F1B14' },
-      blues: { primary: '#4169E1', secondary: '#1E90FF', accent: '#0F0F2F' },
-      ambient: { primary: '#87CEEB', secondary: '#B0E0E6', accent: '#1A2F3A' },
-      acoustic: { primary: '#DEB887', secondary: '#F4A460', accent: '#2F2416' },
+      classical: { primary: '#E6E6FA', secondary: '#DDA0DD', accent: '#9370DB' },
+      jazz: { primary: '#CD853F', secondary: '#D2691E', accent: '#8B4513' },
+      ambient: { primary: '#87CEEB', secondary: '#B0E0E6', accent: '#4682B4' },
       
       // Cultural
-      bollywood: { primary: '#FF6347', secondary: '#FFD700', accent: '#2F1A0A' },
-      hindi: { primary: '#FF4500', secondary: '#FF8C00', accent: '#2F1608' },
-      devotional: { primary: '#FFA500', secondary: '#FF8C00', accent: '#2F1A00' },
-      tamil: { primary: '#DC143C', secondary: '#FF69B4', accent: '#2F0A14' },
-      telugu: { primary: '#32CD32', secondary: '#FFD700', accent: '#1A2F0A' },
-      punjabi: { primary: '#FF1493', secondary: '#00FF7F', accent: '#2F0A1A' },
-      
-      // Moods
-      sad: { primary: '#4682B4', secondary: '#708090', accent: '#1C1C2E' },
-      happy: { primary: '#FFD700', secondary: '#FF69B4', accent: '#2F2A0A' },
-      romantic: { primary: '#FF1493', secondary: '#FF69B4', accent: '#2F0A1A' },
-      party: { primary: '#FF00FF', secondary: '#00FFFF', accent: '#2F002F' },
-      workout: { primary: '#FF4500', secondary: '#32CD32', accent: '#2F1608' },
+      bollywood: { primary: '#FF6347', secondary: '#FFD700', accent: '#FF4500' },
+      devotional: { primary: '#FFA500', secondary: '#FF8C00', accent: '#FF7F50' },
       
       // Default
-      default: { primary: '#FF3CAC', secondary: '#784BA0', accent: '#1A1B2E' },
-    };
-
-    // Generate unique colors based on video ID if no genre match
-    const generateColorsFromId = (id: string) => {
-      const hash = id.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      
-      const hue1 = Math.abs(hash) % 360;
-      const hue2 = (hue1 + 120) % 360;
-      const hue3 = (hue1 + 240) % 360;
-      
-      return {
-        primary: `hsl(${hue1}, 70%, 60%)`,
-        secondary: `hsl(${hue2}, 70%, 60%)`,
-        accent: `hsl(${hue3}, 30%, 15%)`,
-      };
+      default: { primary: '#FF3CAC', secondary: '#784BA0', accent: '#2B2D42' },
     };
 
     let selectedColors = colorMappings.default;
 
-    // Check for genre keywords
     for (const [genre, colors] of Object.entries(colorMappings)) {
       if (genre !== 'default' && (title.includes(genre) || channel.includes(genre))) {
         selectedColors = colors;
         break;
       }
-    }
-    
-    // If no genre match, generate unique colors from video ID
-    if (selectedColors === colorMappings.default) {
-      selectedColors = generateColorsFromId(videoId);
     }
 
     setColors(selectedColors);

@@ -141,17 +141,13 @@ export const useYouTubePlayer = () => {
   const loadVideo = (videoId: string) => {
     if (playerRef.current && isPlayerReady && typeof playerRef.current.loadVideoById === 'function') {
       setTimeout(() => {
-        playerRef.current.loadVideoById({
-          videoId: videoId,
-          startSeconds: 0,
-          suggestedQuality: 'default'
-        });
+        playerRef.current.loadVideoById(videoId);
         setTimeout(() => {
           if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
             playerRef.current.playVideo();
           }
-        }, 500);
-      }, 200);
+        }, 200);
+      }, 100);
     }
   };
 
@@ -213,7 +209,6 @@ export const useYouTubePlayer = () => {
         ...prev,
         currentIndex: index,
         currentTrack: track,
-        isPlaying: false, // Reset playing state
       }));
       loadVideo(track.id);
     }

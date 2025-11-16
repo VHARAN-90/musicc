@@ -27,6 +27,7 @@ interface PlayerControlsProps {
   onSleepTimerComplete: () => void;
   onRewind?: () => void;
   audioData?: Uint8Array;
+  currentTrack?: YouTubeVideo | null;
 }
 
 export default function PlayerControls({
@@ -39,7 +40,8 @@ export default function PlayerControls({
   onVolumeChange,
   onSleepTimerComplete,
   onRewind,
-  audioData
+  audioData,
+  currentTrack
 }: PlayerControlsProps) {
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'all'>('off');
@@ -134,6 +136,7 @@ export default function PlayerControls({
             onSeek={onSeek}
             audioData={audioData}
             isPlaying={isPlaying}
+            currentTrack={currentTrack}
           />
         </div>
 

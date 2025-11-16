@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { YouTubeVideo } from '../types/youtube';
+import { getMoodColors } from '../utils/moodDetection';
 
 interface WaveformScrubberProps {
   currentTime: number;
@@ -6,6 +8,7 @@ interface WaveformScrubberProps {
   onSeek: (time: number) => void;
   audioData?: Uint8Array;
   isPlaying: boolean;
+  currentTrack?: YouTubeVideo | null;
 }
 
 export const WaveformScrubber: React.FC<WaveformScrubberProps> = ({
@@ -14,6 +17,7 @@ export const WaveformScrubber: React.FC<WaveformScrubberProps> = ({
   onSeek,
   audioData,
   isPlaying,
+  currentTrack,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,6 +25,9 @@ export const WaveformScrubber: React.FC<WaveformScrubberProps> = ({
   const [isHovering, setIsHovering] = useState(false);
   const [gestureStartX, setGestureStartX] = useState(0);
   const [gestureStartTime, setGestureStartTime] = useState(0);
+
+  // Get mood-based colors
+  const moodColors = getMoodColors(currentTrack);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -56,8 +63,8 @@ export const WaveformScrubber: React.FC<WaveformScrubberProps> = ({
         const isPlayed = i < audioData.length * progress;
         
         ctx.fillStyle = isPlayed 
-          ? 'rgba(255, 60, 172, 0.8)' 
-          : 'rgba(255, 255, 255, 0.3)';
+          ? moodColors.waveformPlayed
+          : moodColors.waveform;
         
         ctx.fillRect(x, centerY - barHeight / 2, barWidth - 1, barHeight);
       }
@@ -75,8 +82,8 @@ export const WaveformScrubber: React.FC<WaveformScrubberProps> = ({
         const isPlayed = i < bars * progress;
         
         ctx.fillStyle = isPlayed 
-          ? 'rgba(255, 60, 172, 0.8)' 
-          : 'rgba(255, 255, 255, 0.3)';
+          ? moodColors.waveformPlayed
+          : moodColors.waveform;
         
         ctx.fillRect(x, centerY - barHeight / 2, barWidth - 1, barHeight);
       }
@@ -87,7 +94,7 @@ export const WaveformScrubber: React.FC<WaveformScrubberProps> = ({
       const progress = currentTime / duration;
       const playheadX = progress * (canvas.width / 2);
       
-      ctx.strokeStyle = '#FFFFFF';
+      ctx.strokeStyle = moodColors.primary;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
@@ -95,13 +102,13 @@ export const WaveformScrubber: React.FC<WaveformScrubberProps> = ({
       ctx.stroke();
       
       // Playhead circle
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = moodColors.primary;
       ctx.beginPath();
       ctx.arc(playheadX, canvas.height / 4, 4, 0, Math.PI * 2);
       ctx.fill();
     }
 
-  }, [audioData, currentTime, duration, isHovering]);
+  }, [audioData, currentTime, duration, isHovering, moodColors]);
 
   const handleInteractionStart = (clientX: number) => {
     setIsDragging(true);

@@ -6,12 +6,13 @@ import PlayerControls from '../components/PlayerControls';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { PlaylistModal } from '../components/PlaylistModal';
 import { SynestheticBackground } from '../components/SynestheticBackground';
+import { AuthModal } from '../components/AuthModal';
 import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
+import { useSupabasePlaylists } from '../hooks/useSupabasePlaylists';
 import { useAIAutoplay } from '../hooks/useAIAutoplay';
 import { youtubeApi, YouTubeApiService } from '../services/youtubeApi';
 import { YouTubeVideo } from '../types/youtube';
-import { Playlist } from '../types/user';
 
 export const HomePage: React.FC = () => {
   const [apiService] = useState<YouTubeApiService>(youtubeApi);
@@ -21,10 +22,22 @@ export const HomePage: React.FC = () => {
   const [showVideo, setShowVideo] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [selectedTrackForPlaylist, setSelectedTrackForPlaylist] = useState<YouTubeVideo | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentView, setCurrentView] = useState<'search' | 'liked' | 'playlists'>('search');
 
-  const [likedSongs, setLikedSongs] = useLocalStorage<YouTubeVideo[]>('likedSongs', []);
-  const [playlists, setPlaylists] = useLocalStorage<Playlist[]>('playlists', []);
+  // Auth and database hooks
+  const { user, loading: authLoading, signOut } = useSupabaseAuth();
+  const {
+    playlists,
+    likedSongs,
+    loading: playlistsLoading,
+    createPlaylist,
+    deletePlaylist,
+    addToPlaylist,
+    toggleLikedSong,
+    isTrackLiked,
+  } = useSupabasePlaylists();
+
   const [audioData, setAudioData] = React.useState<Uint8Array>();
   const audioContextRef = React.useRef<AudioContext | null>(null);
   const analyserRef = React.useRef<AnalyserNode | null>(null);
@@ -153,18 +166,21 @@ export const HomePage: React.FC = () => {
   };
 
   const handleAddToPlaylist = (track: YouTubeVideo) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     setSelectedTrackForPlaylist(track);
     setShowPlaylistModal(true);
   };
 
   const handleLikeToggle = (track: YouTubeVideo) => {
-    const isLiked = likedSongs.some(song => song.id === track.id);
-    if (isLiked) {
-      setLikedSongs(likedSongs.filter(song => song.id !== track.id));
-    } else {
-      setLikedSongs([...likedSongs, track]);
-      recordLike(track); // Record for AI learning
+    if (!user) {
+      setShowAuthModal(true);
+      return;
     }
+    toggleLikedSong(track);
+      recordLike(track); // Record for AI learning
   };
   
   const handleSkipTrack = () => {
@@ -179,35 +195,8 @@ export const HomePage: React.FC = () => {
     seekTo(rewindTime);
   };
 
-  const isTrackLiked = (trackId: string): boolean => {
-    return likedSongs.some(song => song.id === trackId);
-  };
-
-  const createPlaylist = (name: string, description?: string): Playlist => {
-    const newPlaylist: Playlist = {
-      id: Date.now().toString(),
-      name,
-      description,
-      tracks: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      userId: 'local',
-      isPublic: false,
-    };
-    setPlaylists([...playlists, newPlaylist]);
-    return newPlaylist;
-  };
-
-  const deletePlaylist = (playlistId: string) => {
-    setPlaylists(playlists.filter(p => p.id !== playlistId));
-  };
-
-  const addToPlaylist = (playlistId: string, track: YouTubeVideo) => {
-    setPlaylists(playlists.map(p => 
-      p.id === playlistId && !p.tracks.some(t => t.id === track.id)
-        ? { ...p, tracks: [...p.tracks, track], updatedAt: new Date() }
-        : p
-    ));
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -234,6 +223,20 @@ export const HomePage: React.FC = () => {
 
       <div className="container mx-auto px-4 py-4 md:py-8 pb-32 relative z-10">
         <div className="flex items-center justify-between mb-6 md:mb-8">
+          <div className="flex items-center space-x-4">
+            {user && (
+              <div className="flex items-center space-x-2 text-sm text-gray-300">
+                <span>Welcome, {user.email}</span>
+                <button
+                  onClick={handleSignOut}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+          
           <div className="text-center flex-1">
             <div className="flex items-center justify-center space-x-2 md:space-x-3 mb-3 md:mb-4">
               <div className="w-8 h-8 md:w-12 md:h-12 bg-gradient-to-r from-[#FF3CAC] to-[#784BA0] rounded-full flex items-center justify-center">
@@ -246,6 +249,17 @@ export const HomePage: React.FC = () => {
             <p className="text-gray-300 max-w-2xl mx-auto text-sm md:text-base px-2">
               Search and play your favorite songs with text or voice search. Songs will automatically play one after another with continuous auto-play.
             </p>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {!user && (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="px-4 py-2 bg-gradient-to-r from-[#FF3CAC] to-[#784BA0] text-white rounded-lg hover:from-[#FF3CAC]/80 hover:to-[#784BA0]/80 transition-all duration-200 text-sm font-medium"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </div>
 
@@ -413,9 +427,15 @@ export const HomePage: React.FC = () => {
             onSleepTimerComplete={pause}
             onRewind={handleRewind}
             audioData={audioData}
+            currentTrack={playerState.currentTrack}
           />
         </div>
       )}
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
 
       <PlaylistModal
         isOpen={showPlaylistModal}

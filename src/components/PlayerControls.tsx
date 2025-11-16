@@ -56,6 +56,14 @@ export default function PlayerControls({
     }
   };
 
+  const handleNext = () => {
+    onNext();
+  };
+
+  const handlePrevious = () => {
+    onPrevious();
+  };
+
   const handleVolumeToggle = () => {
     if (isMuted) {
       onVolumeChange(previousVolume);
@@ -101,6 +109,14 @@ export default function PlayerControls({
     onSeek(seekTime);
   };
 
+  const handleRewind = () => {
+    if (onRewind) {
+      onRewind();
+    } else {
+      const rewindTime = Math.max(0, currentTime - 10);
+      onSeek(rewindTime);
+    }
+  };
   if (!currentTrack) {
     return null;
   }
@@ -178,7 +194,7 @@ export default function PlayerControls({
 
               {onRewind && (
                 <button
-                  onClick={onRewind}
+                  onClick={handleRewind}
                   className="p-2 text-gray-400 hover:text-white transition-colors"
                   title="Rewind 10 seconds"
                 >
@@ -190,7 +206,7 @@ export default function PlayerControls({
             {/* Primary Controls */}
             <div className="flex items-center space-x-3">
               <button
-                onClick={onPrevious}
+                onClick={handlePrevious}
                 className="p-2 text-gray-300 hover:text-white transition-colors"
                 title="Previous"
               >
@@ -210,7 +226,7 @@ export default function PlayerControls({
               </button>
               
               <button
-                onClick={onNext}
+                onClick={handleNext}
                 className="p-2 text-gray-300 hover:text-white transition-colors"
                 title="Next"
               >

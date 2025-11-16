@@ -141,15 +141,19 @@ export const WaveformScrubber: React.FC<WaveformScrubberProps> = ({
     const progress = Math.max(0, Math.min(1, x / rect.width));
     const seekTime = progress * duration;
     
-    onSeek(seekTime);
+    if (duration > 0) {
+      onSeek(seekTime);
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (duration <= 0) return;
     e.preventDefault();
     handleInteractionStart(e.clientX);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (duration <= 0) return;
     e.preventDefault();
     handleInteractionStart(e.touches[0].clientX);
   };

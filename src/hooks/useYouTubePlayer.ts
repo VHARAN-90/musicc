@@ -28,9 +28,7 @@ export const useYouTubePlayer = () => {
       if (nextIndex < prev.queue.length) {
         const nextTrack = prev.queue[nextIndex];
         if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
-          setTimeout(() => {
-            playerRef.current.loadVideoById(nextTrack.id);
-          }, 100);
+          playerRef.current.loadVideoById(nextTrack.id);
         }
         return {
           ...prev,
@@ -140,14 +138,13 @@ export const useYouTubePlayer = () => {
 
   const loadVideo = (videoId: string) => {
     if (playerRef.current && isPlayerReady && typeof playerRef.current.loadVideoById === 'function') {
+      playerRef.current.loadVideoById(videoId);
+      // Small delay to ensure video is loaded before playing
       setTimeout(() => {
-        playerRef.current.loadVideoById(videoId);
-        setTimeout(() => {
-          if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
-            playerRef.current.playVideo();
-          }
-        }, 200);
-      }, 100);
+        if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
+          playerRef.current.playVideo();
+        }
+      }, 500);
     }
   };
 
@@ -190,28 +187,34 @@ export const useYouTubePlayer = () => {
   };
 
   const playPrevious = () => {
-    const prevIndex = playerState.currentIndex - 1;
-    if (prevIndex >= 0) {
-      const prevTrack = playerState.queue[prevIndex];
-      setPlayerState(prev => ({
-        ...prev,
-        currentIndex: prevIndex,
-        currentTrack: prevTrack,
-      }));
-      loadVideo(prevTrack.id);
-    }
+    setPlayerState(prev => {
+      const prevIndex = prev.currentIndex - 1;
+      if (prevIndex >= 0 && prev.queue[prevIndex]) {
+        const prevTrack = prev.queue[prevIndex];
+        loadVideo(prevTrack.id);
+        return {
+          ...prev,
+          currentIndex: prevIndex,
+          currentTrack: prevTrack,
+        };
+      }
+      return prev;
+    });
   };
 
   const playTrack = (index: number) => {
-    if (index >= 0 && index < playerState.queue.length) {
-      const track = playerState.queue[index];
-      setPlayerState(prev => ({
-        ...prev,
-        currentIndex: index,
-        currentTrack: track,
-      }));
-      loadVideo(track.id);
-    }
+    setPlayerState(prev => {
+      if (index >= 0 && index < prev.queue.length) {
+        const track = prev.queue[index];
+        loadVideo(track.id);
+        return {
+          ...prev,
+          currentIndex: index,
+          currentTrack: track,
+        };
+      }
+      return prev;
+    });
   };
 
   return {

@@ -122,11 +122,7 @@ export const HomePage: React.FC = () => {
       // Update AI adaptive playlist
       updateAdaptivePlaylist(results);
       
-      if (results.length > 0) {
-        // Use adaptive playlist if available, otherwise use search results
-        const tracksToUse = adaptivePlaylist.length > 0 ? adaptivePlaylist : results;
-        setQueue(tracksToUse, 0);
-      }
+      // Don't auto-play search results, let user choose
     } catch (error) {
       console.error('Search failed:', error);
       setSearchResults([]);
@@ -136,7 +132,10 @@ export const HomePage: React.FC = () => {
   };
 
   const handleTrackSelect = (index: number) => {
-    playTrack(index);
+    if (index >= 0 && index < getCurrentTracks().length) {
+      const tracks = getCurrentTracks();
+      setQueue(tracks, index);
+    }
   };
 
   const toggleVideoView = () => {
@@ -145,9 +144,7 @@ export const HomePage: React.FC = () => {
 
   const handleShowLikedSongs = () => {
     setCurrentView('liked');
-    if (likedSongs.length > 0) {
-      setQueue(likedSongs, 0);
-    }
+    // Don't auto-play, let user choose
   };
 
   const handleShowPlaylists = () => {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Loader2, Mic, MicOff } from 'lucide-react';
+import { Search, Loader2, Mic, MicOff, Clock, TrendingUp } from 'lucide-react';
 import { useVoiceSearch } from '../hooks/useVoiceSearch';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -9,21 +10,75 @@ interface SearchBarProps {
 
 export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = false }) => {
   const [query, setQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [recentSearches, setRecentSearches] = useLocalStorage<string[]>('recentSearches', []);
+  
+  // Popular search suggestions
+  const popularSuggestions = [
+    'Bollywood hits 2024',
+    'AR Rahman songs',
+    'Tamil melody songs',
+    'Hindi romantic songs',
+    'Arijit Singh songs',
+    'Telugu hit songs',
+    'Punjabi songs',
+    'Malayalam songs',
+    'Classical music',
+    'Devotional songs',
+    'Rock music',
+    'Pop hits',
+    'Electronic music',
+    'Jazz music',
+    'Indie music'
+  ];
   
   const handleVoiceResult = (transcript: string) => {
     setQuery(transcript);
     if (transcript.trim()) {
+      addToRecentSearches(transcript.trim());
       onSearch(transcript.trim());
+      setShowSuggestions(false);
     }
   };
 
   const { isListening, transcript, isSupported, startListening, stopListening } = useVoiceSearch(handleVoiceResult);
 
+  const addToRecentSearches = (searchQuery: string) => {
+    const updatedSearches = [searchQuery, ...recentSearches.filter(s => s !== searchQuery)].slice(0, 10);
+    setRecentSearches(updatedSearches);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
+      addToRecentSearches(query.trim());
       onSearch(query.trim());
+      setShowSuggestions(false);
     }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setQuery(suggestion);
+    addToRecentSearches(suggestion);
+    onSearch(suggestion);
+    setShowSuggestions(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    setShowSuggestions(value.length > 0);
+  };
+
+  const handleInputFocus = () => {
+    if (query.length > 0 || recentSearches.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding suggestions to allow clicking on them
+    setTimeout(() => setShowSuggestions(false), 200);
   };
 
   const handleVoiceToggle = () => {
@@ -34,14 +89,42 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = fals
     }
   };
 
+  // Filter suggestions based on query
+  const getFilteredSuggestions = () => {
+    if (!query.trim()) {
+      return {
+        recent: recentSearches.slice(0, 5),
+        popular: popularSuggestions.slice(0, 8)
+      };
+    }
+    
+    const queryLower = query.toLowerCase();
+    const filteredRecent = recentSearches.filter(search => 
+      search.toLowerCase().includes(queryLower)
+    ).slice(0, 3);
+    
+    const filteredPopular = popularSuggestions.filter(suggestion => 
+      suggestion.toLowerCase().includes(queryLower)
+    ).slice(0, 5);
+    
+    return {
+      recent: filteredRecent,
+      popular: filteredPopular
+    };
+  };
+
+  const { recent, popular } = getFilteredSuggestions();
+
   return (
-    <div className="mb-4 md:mb-6">
+    <div className="mb-4 md:mb-6 relative">
       <form onSubmit={handleSubmit} className="flex items-center space-x-2 md:space-x-3">
         <div className="relative flex-1">
           <input
             type="text"
             value={isListening ? transcript : query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             placeholder={isListening ? "Listening... Speak now!" : "Search for songs, artists, or playlists"}
             className={`w-full pl-10 md:pl-12 pr-16 md:pr-20 py-2.5 md:py-3 text-sm md:text-base bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF3CAC]/50 focus:border-transparent transition-all duration-200 ${
               isListening ? 'ring-2 ring-red-500/50 border-red-500/30' : ''
@@ -85,6 +168,52 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = fals
         )}
       </form>
       
+      {/* Search Suggestions */}
+      {showSuggestions && (recent.length > 0 || popular.length > 0) && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-[#2B2D42] border border-white/10 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
+          {recent.length > 0 && (
+            <div className="p-3 border-b border-white/10">
+              <div className="flex items-center space-x-2 mb-2">
+                <Clock className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-400 text-sm font-medium">Recent Searches</span>
+              </div>
+              <div className="space-y-1">
+                {recent.map((search, index) => (
+                  <button
+                    key={`recent-${index}`}
+                    onClick={() => handleSuggestionClick(search)}
+                    className="w-full text-left px-3 py-2 text-white hover:bg-white/10 rounded-lg transition-colors text-sm"
+                  >
+                    {search}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {popular.length > 0 && (
+            <div className="p-3">
+              <div className="flex items-center space-x-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-400 text-sm font-medium">
+                  {query.trim() ? 'Matching Suggestions' : 'Popular Searches'}
+                </span>
+              </div>
+              <div className="space-y-1">
+                {popular.map((suggestion, index) => (
+                  <button
+                    key={`popular-${index}`}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className="w-full text-left px-3 py-2 text-white hover:bg-white/10 rounded-lg transition-colors text-sm"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {isListening && (
         <div className="mt-2 md:mt-3 p-2 md:p-3 bg-red-500/10 border border-red-500/20 rounded-lg backdrop-blur-sm">
           <div className="flex items-center space-x-2">

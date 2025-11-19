@@ -48,7 +48,7 @@ export default function PlayerControls({
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(50);
 
-  const { isPlaying, currentTime, duration, volume, currentTrack } = playerState;
+  const { isPlaying, currentTime, duration, volume } = playerState;
 
   const handlePlayPause = () => {
     if (isPlaying) {

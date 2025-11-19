@@ -11,6 +11,7 @@ import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { useSupabasePlaylists } from '../hooks/useSupabasePlaylists';
 import { useAIAutoplay } from '../hooks/useAIAutoplay';
+import { isSupabaseEnabled } from '../services/supabaseClient';
 import { youtubeApi, YouTubeApiService } from '../services/youtubeApi';
 import { YouTubeVideo } from '../types/youtube';
 
@@ -252,7 +253,7 @@ export const HomePage: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-2">
-            {!user && (
+            {!user && isSupabaseEnabled && (
               <button
                 onClick={() => setShowAuthModal(true)}
                 className="px-4 py-2 bg-gradient-to-r from-[#FF3CAC] to-[#784BA0] text-white rounded-lg hover:from-[#FF3CAC]/80 hover:to-[#784BA0]/80 transition-all duration-200 text-sm font-medium"

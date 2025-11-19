@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../services/supabaseClient';
+import { supabase, isSupabaseEnabled } from '../services/supabaseClient';
 import { YouTubeVideo } from '../types/youtube';
 import { useSupabaseAuth } from './useSupabaseAuth';
 
@@ -46,7 +46,7 @@ export const useSupabasePlaylists = () => {
 
   // Load playlists from database
   const loadPlaylists = async () => {
-    if (!user) return;
+    if (!user || !isSupabaseEnabled || !supabase) return;
 
     setLoading(true);
     try {
@@ -93,7 +93,7 @@ export const useSupabasePlaylists = () => {
 
   // Load liked songs from database
   const loadLikedSongs = async () => {
-    if (!user) return;
+    if (!user || !isSupabaseEnabled || !supabase) return;
 
     try {
       const { data, error } = await supabase
@@ -125,7 +125,7 @@ export const useSupabasePlaylists = () => {
 
   // Create new playlist
   const createPlaylist = async (name: string, description?: string) => {
-    if (!user) return null;
+    if (!user || !isSupabaseEnabled || !supabase) return null;
 
     try {
       const { data, error } = await supabase
@@ -155,7 +155,7 @@ export const useSupabasePlaylists = () => {
 
   // Delete playlist
   const deletePlaylist = async (playlistId: string) => {
-    if (!user) return;
+    if (!user || !isSupabaseEnabled || !supabase) return;
 
     try {
       const { error } = await supabase
@@ -174,7 +174,7 @@ export const useSupabasePlaylists = () => {
 
   // Add track to playlist
   const addToPlaylist = async (playlistId: string, track: YouTubeVideo) => {
-    if (!user) return;
+    if (!user || !isSupabaseEnabled || !supabase) return;
 
     try {
       // Get current track count for position
@@ -206,7 +206,7 @@ export const useSupabasePlaylists = () => {
 
   // Remove track from playlist
   const removeFromPlaylist = async (playlistId: string, trackId: string) => {
-    if (!user) return;
+    if (!user || !isSupabaseEnabled || !supabase) return;
 
     try {
       const { error } = await supabase
@@ -226,7 +226,7 @@ export const useSupabasePlaylists = () => {
 
   // Toggle liked song
   const toggleLikedSong = async (track: YouTubeVideo) => {
-    if (!user) return;
+    if (!user || !isSupabaseEnabled || !supabase) return;
 
     const isLiked = likedSongs.some(song => song.id === track.id);
 

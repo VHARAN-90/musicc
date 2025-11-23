@@ -102,11 +102,93 @@ const extractMusicDirector = (title: string, channelTitle: string): string => {
 
 export class YouTubeApiService {
   private apiKey: string;
+  private suggestionCache: Map<string, string[]> = new Map();
+  private debounceTimer: NodeJS.Timeout | null = null;
 
   constructor(apiKey: string = API_KEY) {
     this.apiKey = apiKey;
   }
 
+  async getSearchSuggestions(query: string): Promise<string[]> {
+    if (!query.trim() || query.length < 2) return [];
+    
+    // Check cache first
+    const cacheKey = query.toLowerCase().trim();
+    if (this.suggestionCache.has(cacheKey)) {
+      return this.suggestionCache.get(cacheKey)!;
+    }
+
+    try {
+      // Use YouTube's autocomplete API
+      const response = await fetch(
+        `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(query)}&callback=?`,
+        {
+          method: 'GET',
+          mode: 'cors',
+        }
+      );
+      
+      if (!response.ok) {
+        // Fallback to search API for suggestions
+        return this.getFallbackSuggestions(query);
+      }
+
+      const text = await response.text();
+      // Parse JSONP response
+      const jsonMatch = text.match(/\[.*\]/);
+      if (jsonMatch) {
+        const data = JSON.parse(jsonMatch[0]);
+        const suggestions = data[1]?.map((item: any) => item[0]) || [];
+        
+        // Cache the results
+        this.suggestionCache.set(cacheKey, suggestions.slice(0, 8));
+        return suggestions.slice(0, 8);
+      }
+      
+      return this.getFallbackSuggestions(query);
+    } catch (error) {
+      console.log('Suggestion API failed, using fallback');
+      return this.getFallbackSuggestions(query);
+    }
+  }
+
+  private async getFallbackSuggestions(query: string): Promise<string[]> {
+    try {
+      // Use YouTube search API to get related suggestions
+      const searchUrl = `${BASE_URL}/search?part=snippet&type=video&q=${encodeURIComponent(query + ' music')}&maxResults=5&key=${this.apiKey}&videoCategoryId=10`;
+      const response = await fetch(searchUrl);
+      const data = await response.json();
+      
+      if (data.items) {
+        const suggestions = data.items.map((item: any) => {
+          // Extract clean suggestions from video titles
+          let title = item.snippet.title;
+          // Remove common suffixes
+          title = title.replace(/\s*\(.*?\)\s*/g, '');
+          title = title.replace(/\s*\[.*?\]\s*/g, '');
+          title = title.replace(/\s*(official|video|song|music|lyrical|full)\s*/gi, '');
+          return title.trim();
+        }).filter((title: string) => title.length > 0);
+        
+        return [...new Set(suggestions)].slice(0, 5); // Remove duplicates
+      }
+      
+      return [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  debouncedGetSuggestions(query: string, callback: (suggestions: string[]) => void, delay: number = 300) {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+    
+    this.debounceTimer = setTimeout(async () => {
+      const suggestions = await this.getSearchSuggestions(query);
+      callback(suggestions);
+    }, delay);
+  }
   async searchVideos(query: string, maxResults: number = 10): Promise<YouTubeVideo[]> {
     try {
       const musicQuery = `${query} +song`;

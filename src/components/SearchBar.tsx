@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, Loader2, Mic, MicOff, Clock, TrendingUp } from 'lucide-react';
+import { Search, Loader2, Mic, MicOff, Clock, TrendingUp, Music } from 'lucide-react';
 import { useVoiceSearch } from '../hooks/useVoiceSearch';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { youtubeApi } from '../services/youtubeApi';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -12,6 +13,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = fals
   const [query, setQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useLocalStorage<string[]>('recentSearches', []);
+  const [liveSuggestions, setLiveSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   
   // Popular search suggestions
   const popularSuggestions = [
@@ -67,7 +70,19 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = fals
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
-    setShowSuggestions(value.length > 0);
+    setShowSuggestions(value.length > 0 || recentSearches.length > 0);
+    
+    // Get live suggestions from YouTube
+    if (value.length >= 2) {
+      setIsLoadingSuggestions(true);
+      youtubeApi.debouncedGetSuggestions(value, (suggestions) => {
+        setLiveSuggestions(suggestions);
+        setIsLoadingSuggestions(false);
+      });
+    } else {
+      setLiveSuggestions([]);
+      setIsLoadingSuggestions(false);
+    }
   };
 
   const handleInputFocus = () => {
@@ -94,7 +109,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = fals
     if (!query.trim()) {
       return {
         recent: recentSearches.slice(0, 5),
-        popular: popularSuggestions.slice(0, 8)
+        popular: popularSuggestions.slice(0, 8),
+        live: []
       };
     }
     
@@ -109,11 +125,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = fals
     
     return {
       recent: filteredRecent,
-      popular: filteredPopular
+      popular: filteredPopular,
+      live: liveSuggestions.slice(0, 6)
     };
   };
 
-  const { recent, popular } = getFilteredSuggestions();
+  const { recent, popular, live } = getFilteredSuggestions();
 
   return (
     <div className="mb-4 md:mb-6 relative">
@@ -169,8 +186,45 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = fals
       </form>
       
       {/* Search Suggestions */}
-      {showSuggestions && (recent.length > 0 || popular.length > 0) && (
+      {showSuggestions && (recent.length > 0 || popular.length > 0 || live.length > 0 || isLoadingSuggestions) && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-[#2B2D42] border border-white/10 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
+          {/* Live Suggestions */}
+          {(live.length > 0 || isLoadingSuggestions) && query.length >= 2 && (
+            <div className="p-3 border-b border-white/10">
+              <div className="flex items-center space-x-2 mb-2">
+                <Music className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-400 text-sm font-medium">
+                  {isLoadingSuggestions ? 'Searching...' : 'Suggestions'}
+                </span>
+                {isLoadingSuggestions && (
+                  <Loader2 className="h-3 w-3 text-gray-400 animate-spin" />
+                )}
+              </div>
+              <div className="space-y-1">
+                {isLoadingSuggestions ? (
+                  // Loading skeleton
+                  [...Array(3)].map((_, index) => (
+                    <div key={`loading-${index}`} className="px-3 py-2 animate-pulse">
+                      <div className="h-4 bg-white/10 rounded w-3/4"></div>
+                    </div>
+                  ))
+                ) : (
+                  live.map((suggestion, index) => (
+                    <button
+                      key={`live-${index}`}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="w-full text-left px-3 py-2 text-white hover:bg-white/10 rounded-lg transition-colors text-sm flex items-center space-x-2"
+                    >
+                      <Search className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                      <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{search}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+          
           {recent.length > 0 && (
             <div className="p-3 border-b border-white/10">
               <div className="flex items-center space-x-2 mb-2">
@@ -204,9 +258,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = fals
                   <button
                     key={`popular-${index}`}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="w-full text-left px-3 py-2 text-white hover:bg-white/10 rounded-lg transition-colors text-sm"
+                    className="w-full text-left px-3 py-2 text-white hover:bg-white/10 rounded-lg transition-colors text-sm flex items-center space-x-2"
                   >
-                    {suggestion}
+                    <TrendingUp className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                    <span className="truncate">{suggestion}</span>
                   </button>
                 ))}
               </div>

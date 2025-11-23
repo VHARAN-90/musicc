@@ -33,13 +33,17 @@ export const TrackList: React.FC<TrackListProps> = ({
   const [showMenu, setShowMenu] = React.useState<string | null>(null);
 
   const handleTrackClick = (track: YouTubeVideo, index: number) => {
+    console.log('Track clicked:', track.title, 'at index:', index);
     if (currentTrack?.id === track.id) {
       if (isPlaying) {
+        console.log('Pausing current track');
         onPause();
       } else {
+        console.log('Playing current track');
         onPlay();
       }
     } else {
+      console.log('Selecting new track');
       onTrackSelect(index);
     }
   };

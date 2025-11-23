@@ -146,8 +146,10 @@ export const HomePage: React.FC = () => {
   };
 
   const handleTrackSelect = (index: number) => {
+    console.log('Track selected:', index);
     if (index >= 0 && index < getCurrentTracks().length) {
       const tracks = getCurrentTracks();
+      console.log('Setting queue with', tracks.length, 'tracks');
       setQueue(tracks, index);
     }
   };

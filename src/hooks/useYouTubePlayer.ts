@@ -58,7 +58,7 @@ export const useYouTubePlayer = () => {
         clearInterval(timeUpdateIntervalRef.current);
       }
     };
-  }, []);
+  }, [playNext]);
 
   const initializePlayer = () => {
     playerRef.current = new window.YT.Player('youtube-player', {
@@ -81,14 +81,23 @@ export const useYouTubePlayer = () => {
         onReady: () => {
           setIsPlayerReady(true);
           playerRef.current.setVolume(50);
+          console.log('YouTube player is ready');
         },
         onStateChange: handleStateChange,
+        onError: (event) => {
+          console.error('YouTube player error:', event.data);
+          // Try to skip to next track on error
+          setTimeout(() => {
+            playNext();
+          }, 1000);
+        },
       },
     });
   };
 
   const handleStateChange = (event: any) => {
     const state = event.data;
+    console.log('Player state changed:', state);
     
     if (state === window.YT.PlayerState.PLAYING) {
       setPlayerState(prev => ({ ...prev, isPlaying: true }));
@@ -102,6 +111,13 @@ export const useYouTubePlayer = () => {
       setTimeout(() => {
         playNext();
       }, 500);
+    } else if (state === window.YT.PlayerState.BUFFERING) {
+      console.log('Video is buffering...');
+    } else if (state === window.YT.PlayerState.CUED) {
+      console.log('Video is cued, starting playback...');
+      if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
+        playerRef.current.playVideo();
+      }
     }
   };
 
@@ -174,6 +190,7 @@ export const useYouTubePlayer = () => {
   };
 
   const setQueue = (queue: YouTubeVideo[], startIndex: number = 0) => {
+    console.log('Setting queue:', queue.length, 'tracks, starting at index:', startIndex);
     setPlayerState(prev => ({
       ...prev,
       queue,
@@ -182,15 +199,18 @@ export const useYouTubePlayer = () => {
     }));
 
     if (queue[startIndex]) {
+      console.log('Loading first track:', queue[startIndex].title);
       loadVideo(queue[startIndex].id);
     }
   };
 
   const playPrevious = () => {
+    console.log('Playing previous track');
     setPlayerState(prev => {
       const prevIndex = prev.currentIndex - 1;
       if (prevIndex >= 0 && prev.queue[prevIndex]) {
         const prevTrack = prev.queue[prevIndex];
+        console.log('Loading previous track:', prevTrack.title);
         loadVideo(prevTrack.id);
         return {
           ...prev,
@@ -203,9 +223,11 @@ export const useYouTubePlayer = () => {
   };
 
   const playTrack = (index: number) => {
+    console.log('Playing track at index:', index);
     setPlayerState(prev => {
       if (index >= 0 && index < prev.queue.length) {
         const track = prev.queue[index];
+        console.log('Loading track:', track.title);
         loadVideo(track.id);
         return {
           ...prev,

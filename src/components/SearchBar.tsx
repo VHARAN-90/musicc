@@ -216,8 +216,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading = fals
                       className="w-full text-left px-3 py-2 text-white hover:bg-white/10 rounded-lg transition-colors text-sm flex items-center space-x-2"
                     >
                       <Search className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                      <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{search}</span>
+                      <span className="truncate">{suggestion}</span>
                     </button>
                   ))
                 )}
